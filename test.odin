@@ -6,10 +6,12 @@ import "core:fmt"
 
 main :: proc() {
     path := ""
-    when OS == .Darwin {
-        path = "/Users/Nick/Downloads"
-    } else when OS == .Windows {
+    when OS == .Windows {
         path = "C:/Users/Nick/Downloads"
+    } else when OS == .Darwin {
+        path = "/Users/Nick/Downloads"
+    } else when OS == .Linux {
+        path = "/home/nick/Downloads"
     }
 
     fw._example_run_wacher(path)
