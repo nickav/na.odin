@@ -29,6 +29,10 @@ init :: proc(self: ^File_Watcher) {
 }
 
 add_path :: proc(self: ^File_Watcher, path: string) -> bool {
+    for it in self.paths {
+        if it.path == path do return true
+    }
+
     wpath := win32.utf8_to_wstring(path)
     file := win32.CreateFileW(
         wpath,

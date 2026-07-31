@@ -9,6 +9,8 @@ MB :: 1024 * 1024
 GB :: 1024 * 1024 * 1024
 TB :: 1024 * 1024 * 1024 * 1024
 
+OS :: ODIN_OS
+
 Kilobytes :: proc(x: int) -> int { return x * 1024 }
 Megabytes :: proc(x: int) -> int { return x * 1024 * 1024 }
 Gigabytes :: proc(x: int) -> int { return x * 1024 * 1024 * 1024 }

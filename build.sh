@@ -15,4 +15,3 @@ pushd $build_folder
     $time ./main
     
 popd
-#!/bin/sh

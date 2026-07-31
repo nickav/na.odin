@@ -5,5 +5,12 @@ import "core:time"
 import "core:fmt"
 
 main :: proc() {
-    fw._example_run_wacher("C:/Users/Nick/Downloads")
+    path := ""
+    when OS == .Darwin {
+        path = "/Users/Nick/Downloads"
+    } else when OS == .Windows {
+        path = "C:/Users/Nick/Downloads"
+    }
+
+    fw._example_run_wacher(path)
 }
