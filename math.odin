@@ -1,4 +1,4 @@
-package engine
+package main
 
 import "core:math"
 import la "core:math/linalg"
@@ -126,12 +126,17 @@ pow :: math.pow
 
 lerp :: math.lerp
 
+min_f32   :: #force_inline proc "contextless" (a, b: f32) -> f32 { return min(a, b) }
+max_f32   :: #force_inline proc "contextless" (a, b: f32) -> f32 { return max(a, b) }
+
 floor_i32 :: #force_inline proc "contextless" (x: f32) -> i32 { return i32(floor(x)) }
 floor_f32 :: #force_inline proc "contextless" (x: f32) -> f32 { return floor(x) }
 
 sign_i32 :: #force_inline proc "contextless" (x: i32) -> i32 { return i32(int(x > 0) - int(x < 0)) }
 sign_f32 :: #force_inline proc "contextless" (x: f32) -> f32 { return f32(int(x > 0) - int(x < 0)) }
 sign_f64 :: #force_inline proc "contextless" (x: f64) -> f64 { return f64(int(x > 0) - int(x < 0)) }
+
+clamp_f32 :: #force_inline proc "contextless" (a, b, t: f32) -> f32 { return clamp(a, b, t) }
 
 clamp_01_f32 :: #force_inline proc "contextless" (x: f32) -> f32 { return clamp(x, f32(0), f32(1)) }
 clamp_01_f64 :: #force_inline proc "contextless" (x: f64) -> f64 { return clamp(x, f64(0), f64(1)) }
@@ -330,11 +335,13 @@ clamp_v4 :: #force_inline proc "contextless" (a, lo, hi: Vector4) -> Vector4 {
 r2 :: #force_inline proc "contextless" (x0, y0, x1, y1: f32) -> Rectangle2 {
     return {p0 = {x0, y0}, p1 = {x1, y1}}
 }
-r2_from_v2  :: #force_inline proc "contextless" (size: Vector2) -> Rectangle2 { return {{0,0}, size} }
+r2_from_v2  :: #force_inline proc "contextless" (p0, p1: Vector2) -> Rectangle2 { return {p0, p1} }
 r2_from_v4  :: #force_inline proc "contextless" (v: Vector4) -> Rectangle2 { return {{v.x, v.y}, {v.z, v.w}} }
 r2_from_r2i :: #force_inline proc "contextless" (r: Rectangle2i) -> Rectangle2 {
     return {{f32(r.p0.x), f32(r.p0.y)}, {f32(r.p1.x), f32(r.p1.y)}}
 }
+
+r2_from_size  :: #force_inline proc "contextless" (size: Vector2) -> Rectangle2 { return {{0,0}, size} }
 
 r2_width        :: #force_inline proc "contextless" (r: Rectangle2) -> f32 { return r.p1.x - r.p0.x }
 r2_height       :: #force_inline proc "contextless" (r: Rectangle2) -> f32 { return r.p1.y - r.p0.y }
@@ -345,6 +352,8 @@ r2_top_left     :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 {
 r2_top_right    :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 { return {r.p1.x, r.p1.y} } // matches C (has a bug, bottom-right)
 r2_bottom_left  :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 { return {r.p0.x, r.p1.y} }
 r2_bottom_right :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 { return r.p1 }
+r2_center_right :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 { return {r.p1.x, (r.p0.y + r.p1.y) * 0.5} }
+r2_center_left  :: #force_inline proc "contextless" (r: Rectangle2) -> Vector2 { return {r.p0.x, (r.p0.y + r.p1.y) * 0.5} }
 
 r2_intersects :: #force_inline proc "contextless" (a, b: Rectangle2) -> bool {
     return a.p0.x < b.p1.x && a.p1.x > b.p0.x && a.p0.y < b.p1.y && a.p1.y > b.p0.y
@@ -409,46 +418,61 @@ r2i_width  :: #force_inline proc "contextless" (r: Rectangle2i) -> i32 { return 
 r2i_height :: #force_inline proc "contextless" (r: Rectangle2i) -> i32 { return r.p1.y - r.p0.y }
 
 aspect_ratio_fit :: proc "contextless" (src_w, src_h, dst_w, dst_h: u32) -> Rectangle2i {
+    r := Rectangle2i{}
+
     if src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 do return {}
     opt_w := f32(dst_h) * f32(src_w) / f32(src_h)
     opt_h := f32(dst_w) * f32(src_h) / f32(src_w)
-    r := Rectangle2i{}
-    if opt_w > f32(dst_w) {
+
+    if opt_w > f32(dst_w)
+    {
         r.p0.x = 0; r.p1.x = i32(dst_w)
         he := i32(round(0.5 * (f32(dst_h) - opt_h)))
         r.p0.y = he; r.p1.y = he + i32(round(opt_h))
-    } else {
+    }
+    else
+    {
         r.p0.y = 0; r.p1.y = i32(dst_h)
         he := i32(round(0.5 * (f32(dst_w) - opt_w)))
         r.p0.x = he; r.p1.x = he + i32(round(opt_w))
     }
+
     return r
 }
 
 aspect_ratio_fit_pixel_perfect :: proc "contextless" (src_w, src_h, dst_w, dst_h: u32) -> Rectangle2i {
     if src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 do return {}
+
     scale := min(dst_w / src_w, dst_h / src_h)
     sw, sh := i32(scale * src_w), i32(scale * src_h)
     cx, cy := (i32(dst_w) - sw) / 2, (i32(dst_h) - sh) / 2
+
     return {{cx, cy}, {cx + sw, cy + sh}}
 }
 
 aspect_ratio_fill :: proc "contextless" (src_w, src_h, dst_w, dst_h: u32) -> Rectangle2i {
-    if src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 do return {}
+    r := Rectangle2i{}
+
+    if src_w == 0 || src_h == 0 || dst_w == 0 || dst_h == 0 do return r
+
     opt_w := f32(dst_h) * f32(src_w) / f32(src_h)
     opt_h := f32(dst_w) * f32(src_h) / f32(src_w)
-    r := Rectangle2i{}
-    if opt_w > f32(dst_w) {
+
+    if opt_w > f32(dst_w)
+    {
         r.p0.y = 0; r.p1.y = i32(dst_h)
         ov := opt_w - f32(dst_w)
         r.p0.x = -i32(round(0.5 * ov))
         r.p1.x = i32(dst_w) + i32(round(0.5 * ov))
-    } else {
+    }
+    else
+    {
         r.p0.x = 0; r.p1.x = i32(dst_w)
         ov := opt_h - f32(dst_h)
         r.p0.y = -i32(round(0.5 * ov))
         r.p1.y = i32(dst_h) + i32(round(0.5 * ov))
     }
+
     return r
 }
 

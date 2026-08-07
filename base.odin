@@ -1,4 +1,4 @@
-package engine
+package main
 
 import "core:fmt"
 import vmem "core:mem/virtual"
@@ -24,7 +24,7 @@ Dump :: proc(args: ..any) {
     print("\n")
 }
 
-print :: fmt.println
+print :: fmt.print
 
 sprint :: fmt.tprintf
 

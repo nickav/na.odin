@@ -1,4 +1,4 @@
-package engine
+package main
 
 import fw "file_watcher"
 import "core:time"
