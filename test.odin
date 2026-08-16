@@ -1,17 +1,15 @@
 package main
 
 import fw "file_watcher"
+import "core:os"
 import "core:time"
 import "core:fmt"
 
 main :: proc() {
-    path := ""
-    when OS == .Windows {
-        path = "C:/Users/Nick/Downloads"
-    } else when OS == .Darwin {
-        path = "/Users/Nick/Downloads"
-    } else when OS == .Linux {
-        path = "/home/nick/Downloads"
+    path, err := os.user_downloads_dir(context.allocator)
+    if err != nil {
+        fmt.eprintln("failed to get downloads dir:", err)
+        return
     }
 
     fw._example_run_wacher(path)
