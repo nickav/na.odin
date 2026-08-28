@@ -41,6 +41,7 @@ Pending_Rename :: struct {
     file:   string,
 }
 
+@(private)
 linux__path_for_wd :: proc(self: ^File_Watcher, wd: linux.Wd) -> string {
     for it in self.paths {
         if it.wd == wd do return it.path
@@ -49,7 +50,8 @@ linux__path_for_wd :: proc(self: ^File_Watcher, wd: linux.Wd) -> string {
 }
 
 
-init :: proc(self: ^File_Watcher) -> bool {
+@(private)
+linux__init :: proc(self: ^File_Watcher) -> bool {
     if self.initted do return true
 
     fd, errno := linux.inotify_init1({.NONBLOCK})
@@ -60,7 +62,7 @@ init :: proc(self: ^File_Watcher) -> bool {
 }
 
 add_path :: proc(self: ^File_Watcher, path: string) -> bool {
-    init(self)
+    linux__init(self)
 
     for it in self.paths {
         if it.path == path do return true
@@ -96,6 +98,8 @@ remove_path :: proc(self: ^File_Watcher, path: string) -> bool {
 }
 
 read_changes :: proc(self: ^File_Watcher, allocator := context.temp_allocator) -> [dynamic]File_Watch_Change {
+    linux__init(self)
+
     results: [dynamic]File_Watch_Change
 
     pending_renames: [64]Pending_Rename

@@ -25,9 +25,6 @@ File_Watcher :: struct {
     paths: [dynamic]File_Watch_Path,
 }
 
-init :: proc(self: ^File_Watcher) {
-}
-
 add_path :: proc(self: ^File_Watcher, path: string) -> bool {
     for it in self.paths {
         if it.path == path do return true

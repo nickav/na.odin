@@ -154,9 +154,6 @@ macos__rebuild_stream :: proc(self: ^File_Watcher) -> bool {
 }
 
 
-init :: proc(self: ^File_Watcher) {
-}
-
 add_path :: proc(self: ^File_Watcher, path: string) -> bool {
     for it in self.paths {
         if it == path do return true
