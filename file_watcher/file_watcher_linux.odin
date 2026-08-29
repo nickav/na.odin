@@ -101,6 +101,8 @@ read_changes :: proc(self: ^File_Watcher, allocator := context.temp_allocator) -
     linux__init(self)
 
     results: [dynamic]File_Watch_Change
+    
+    if self.initted do return results
 
     pending_renames: [64]Pending_Rename
     pending_rename_count := 0
