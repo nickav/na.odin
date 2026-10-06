@@ -14,6 +14,7 @@ import "core:unicode"
 import "core:unicode/utf8"
 import "core:encoding/base64"
 import "core:encoding/json"
+import "core:hash/xxhash"
 import win32 "core:sys/windows"
 
 //
@@ -698,6 +699,21 @@ path_sanitize :: proc(name: string, allocator := context.allocator) -> string {
         }
     }
     return strings.clone(string(b), allocator)
+}
+
+//
+// Hash
+//
+
+u64_hash_from_seed_string :: proc(seed: u64, s: string) -> u64 {
+    if len(s) == 0 {
+        return seed
+    }
+    return xxhash.XXH3_64_with_seed(transmute([]u8)s, seed)
+}
+
+u64_hash_from_string :: proc(s: string) -> u64 {
+    return u64_hash_from_seed_string(5381, s)
 }
 
 //
